@@ -23,7 +23,7 @@ public class LockDirection : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other)
     { 
-        if (other.gameObject.layer == LayerMask.NameToLayer("Arena"))
+        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
         {
               transform.GetComponentInParent<PlayerController>().LockDirection(direction,other);
         }
@@ -31,7 +31,7 @@ public class LockDirection : MonoBehaviour {
 
     void OnTriggerExit2D(Collider2D other)
     {
-        if (other.gameObject.layer == LayerMask.NameToLayer("Arena"))
+        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
         {
             transform.GetComponentInParent<PlayerController>().UnlockDirection(direction, other);
         }

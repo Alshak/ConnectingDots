@@ -40,7 +40,7 @@ GameObject:
   - component: {fileID: 61516803946808168}
   - component: {fileID: 114702024027614280}
   m_Layer: 0
-  m_Name: A
+  m_Name: MainBlock
   m_TagString: BlockA
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75,7 +75,7 @@ GameObject:
   - component: {fileID: 114887332305430200}
   - component: {fileID: 61211006929580788}
   m_Layer: 0
-  m_Name: B
+  m_Name: SecondaryBlock
   m_TagString: BlockB
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -661,8 +661,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerNumber: 0
-  blockA: {fileID: 0}
-  blockB: {fileID: 0}
+  mainBlock: {fileID: 0}
+  secondaryBlock: {fileID: 0}
 --- !u!114 &114421873419323790
 MonoBehaviour:
   m_ObjectHideFlags: 1

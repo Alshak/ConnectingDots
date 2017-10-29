@@ -15,16 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
-using UnityEngine;
-
-public class StopOnTouch : MonoBehaviour
+public class LayerNames
 {
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
-        {
-            transform.GetComponentInParent<PlayerController>().LockPlayerMovements();
-            this.enabled = false;
-        }
-    }
+    public const string Arena = "Arena";
 }

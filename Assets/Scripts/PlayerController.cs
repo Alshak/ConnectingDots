@@ -22,21 +22,21 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public int playerNumber = 0;
-    float horizPreviousValue = 0;     // Previous horizontal value
+    float previousHorizontalAxisValue = 0;
 
-    public Transform blockA;
-    public Transform blockB;
+    public Transform mainBlock; // Main block, do not rotate
+    public Transform secondaryBlock; // Secondary block, rotate
 
     bool canPlayerMove = true;
     GameObject gameController;
     Dictionary<RelativePosition, List<Collider2D>> lockDirection = new Dictionary<RelativePosition, List<Collider2D>>();
-    RelativePosition secondBlockPosition = RelativePosition.TOP;
+    RelativePosition secondaryBlockPosition = RelativePosition.TOP;
 
     void Start()
     {
-        gameController = GameObject.FindGameObjectWithTag("GameController");
-        blockA = this.transform.FindChild("A");
-        blockB = this.transform.FindChild("B");
+        gameController = GameObject.FindGameObjectWithTag(TagNames.GameController);
+        mainBlock = this.transform.FindChild(ObjectNames.MainBlock);
+        secondaryBlock = this.transform.FindChild(ObjectNames.SecondaryBlock);
         lockDirection = new Dictionary<RelativePosition, List<Collider2D>>();
         lockDirection[RelativePosition.LEFT] = new List<Collider2D>();
         lockDirection[RelativePosition.RIGHT] = new List<Collider2D>();
@@ -55,24 +55,24 @@ public class PlayerController : MonoBehaviour
 
             if (horizontalAxis < 0 && lockDirection[RelativePosition.LEFT].Count == 0)
             {
-                DoActionLeft();
+                MovePlayerLeft();
             }
             else if (horizontalAxis > 0 && lockDirection[RelativePosition.RIGHT].Count == 0)
             {
-                DoActionRight();
+                MovePlayerRight();
             }
             else
             {
-                JoystickCenter();
+                CenterHorizontalAxis();
             }
 
             if (leftRotation)
             {
-                RotateLeft();
+                RotateSecondaryBlockLeft();
             }
             else if (rightRotation)
             {
-                RotateRight();
+                RotateSecondaryBlockRight();
             }
 
             float fallSpeed = verticalAxis < 0 ? 0.04f : 0.02f;
@@ -98,119 +98,119 @@ public class PlayerController : MonoBehaviour
             // Lock movement
             canPlayerMove = false;
 
-            // Will act like a wall.
+            // Current object will act like a wall from the arena
             foreach (var childLayer in this.gameObject.GetComponentsInChildren<ChangingLayer>())
             {
-                childLayer.ChangeLayer(LayerMask.NameToLayer("Arena"));
+                childLayer.ChangeLayer(LayerMask.NameToLayer(LayerNames.Arena));
             }
 
-            // Making sure we are always at the same position
+            // Round the position to make sure we are always at the same position
             int x = (int) Math.Round(transform.position.x, MidpointRounding.AwayFromZero);
             int y = (int) Math.Round(transform.position.y, MidpointRounding.AwayFromZero);
             transform.position = new Vector2(x, y);
 
-            // Signal GameController a block is down
+            // Signal GameController a block is down, so he can begin a new cycle
             gameController.GetComponent<GameController>().DoNewCycle();
             this.enabled = false;
         }
     }
 
-    private void JoystickCenter()
+    private void CenterHorizontalAxis()
     {
-        horizPreviousValue = 0;
+        previousHorizontalAxisValue = 0;
     }
 
-    private void DoActionLeft()
+    private void MovePlayerLeft()
     {
-        if (horizPreviousValue >= 0)
+        if (previousHorizontalAxisValue >= 0)
         {
-            horizPreviousValue = -1;
+            previousHorizontalAxisValue = -1;
             gameObject.transform.position = new Vector2(transform.position.x - 1, transform.position.y);
         }
     }
 
-    private void DoActionRight()
+    private void MovePlayerRight()
     {
-        if (horizPreviousValue <= 0)
+        if (previousHorizontalAxisValue <= 0)
         {
-            horizPreviousValue = 1;
+            previousHorizontalAxisValue = 1;
             gameObject.transform.position = new Vector2(transform.position.x + 1, transform.position.y);
         }
     }
 
-    private void RotateLeft()
+    private void RotateSecondaryBlockLeft()
     {
-        switch (secondBlockPosition)
+        switch (secondaryBlockPosition)
         {
             case RelativePosition.TOP:
                 if (lockDirection[RelativePosition.LEFT].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.LEFT;
+                    secondaryBlockPosition = RelativePosition.LEFT;
                 }
                 break;
             case RelativePosition.LEFT:
                 if (lockDirection[RelativePosition.BOTTOM].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.BOTTOM;
+                    secondaryBlockPosition = RelativePosition.BOTTOM;
                 }
                 break;
             case RelativePosition.BOTTOM:
                 if (lockDirection[RelativePosition.RIGHT].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.RIGHT;
+                    secondaryBlockPosition = RelativePosition.RIGHT;
                 }
                 break;
             case RelativePosition.RIGHT:
-                secondBlockPosition = RelativePosition.TOP;
+                secondaryBlockPosition = RelativePosition.TOP;
                 break;
         }
-        applySecondaryBlockPosition();
+        ApplySecondaryBlockPosition();
     }
 
-    private void RotateRight()
+    private void RotateSecondaryBlockRight()
     {
-        switch (secondBlockPosition)
+        switch (secondaryBlockPosition)
         {
             case RelativePosition.TOP:
                 if (lockDirection[RelativePosition.RIGHT].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.RIGHT;
+                    secondaryBlockPosition = RelativePosition.RIGHT;
                 }
                 break;
             case RelativePosition.RIGHT:
                 if (lockDirection[RelativePosition.BOTTOM].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.BOTTOM;
+                    secondaryBlockPosition = RelativePosition.BOTTOM;
                 }
                 break;
             case RelativePosition.BOTTOM:
                 if (lockDirection[RelativePosition.LEFT].Count == 0)
                 {
-                    secondBlockPosition = RelativePosition.LEFT;
+                    secondaryBlockPosition = RelativePosition.LEFT;
                 }
                 break;
             case RelativePosition.LEFT:
-                secondBlockPosition = RelativePosition.TOP;
+                secondaryBlockPosition = RelativePosition.TOP;
                 break;
         }
-        applySecondaryBlockPosition();
+        ApplySecondaryBlockPosition();
     }
 
-    private void applySecondaryBlockPosition()
+    private void ApplySecondaryBlockPosition()
     {
-        switch (secondBlockPosition)
+        switch (secondaryBlockPosition)
         {
             case RelativePosition.TOP:
-                blockB.position = new Vector2(blockA.position.x, blockA.position.y + 1);
+                secondaryBlock.position = new Vector2(mainBlock.position.x, mainBlock.position.y + 1);
                 break;
             case RelativePosition.LEFT:
-                blockB.position = new Vector2(blockA.position.x - 1, blockA.position.y);
+                secondaryBlock.position = new Vector2(mainBlock.position.x - 1, mainBlock.position.y);
                 break;
             case RelativePosition.BOTTOM:
-                blockB.position = new Vector2(blockA.position.x, blockA.position.y - 1);
+                secondaryBlock.position = new Vector2(mainBlock.position.x, mainBlock.position.y - 1);
                 break;
             case RelativePosition.RIGHT:
-                blockB.position = new Vector2(blockA.position.x + 1, blockA.position.y);
+                secondaryBlock.position = new Vector2(mainBlock.position.x + 1, mainBlock.position.y);
                 break;
         }
     }

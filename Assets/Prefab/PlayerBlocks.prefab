@@ -663,6 +663,10 @@ MonoBehaviour:
   playerNumber: 0
   mainBlock: {fileID: 0}
   secondaryBlock: {fileID: 0}
+  particleCollisionTemplate: {fileID: 1691824471442362, guid: 7013f8165402d3341aaf011ad3fd886e,
+    type: 2}
+  particleImpactTemplate: {fileID: 1459815154577766, guid: 515a7ff42206d974f9a83e1b6f02607d,
+    type: 2}
 --- !u!114 &114421873419323790
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -760,7 +764,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
+  m_SortingLayerID: 1008055467
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 4762d31645bedf045a134ca37c9974bb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -795,7 +799,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
+  m_SortingLayerID: 1008055467
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 4762d31645bedf045a134ca37c9974bb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

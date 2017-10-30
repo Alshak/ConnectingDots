@@ -32,6 +32,9 @@ public class PlayerController : MonoBehaviour
     Dictionary<RelativePosition, List<Collider2D>> lockDirection = new Dictionary<RelativePosition, List<Collider2D>>();
     RelativePosition secondaryBlockPosition = RelativePosition.TOP;
 
+    public GameObject particleCollisionTemplate;
+    public GameObject particleImpactTemplate;
+
     void Start()
     {
         gameController = GameObject.FindGameObjectWithTag(TagNames.GameController);
@@ -43,7 +46,7 @@ public class PlayerController : MonoBehaviour
         lockDirection[RelativePosition.BOTTOM] = new List<Collider2D>();
         lockDirection[RelativePosition.TOP] = new List<Collider2D>();
     }
-    
+
     void Update()
     {
         if (canPlayerMove)
@@ -53,11 +56,11 @@ public class PlayerController : MonoBehaviour
             bool leftRotation = Input.GetButtonDown("RotL1");
             bool rightRotation = Input.GetButtonDown("RotR1");
 
-            if (horizontalAxis < 0 && lockDirection[RelativePosition.LEFT].Count == 0)
+            if (horizontalAxis < 0)
             {
                 MovePlayerLeft();
             }
-            else if (horizontalAxis > 0 && lockDirection[RelativePosition.RIGHT].Count == 0)
+            else if (horizontalAxis > 0)
             {
                 MovePlayerRight();
             }
@@ -105,9 +108,11 @@ public class PlayerController : MonoBehaviour
             }
 
             // Round the position to make sure we are always at the same position
-            int x = (int) Math.Round(transform.position.x, MidpointRounding.AwayFromZero);
-            int y = (int) Math.Round(transform.position.y, MidpointRounding.AwayFromZero);
+            int x = (int)Math.Round(transform.position.x, MidpointRounding.AwayFromZero);
+            int y = (int)Math.Round(transform.position.y, MidpointRounding.AwayFromZero);
             transform.position = new Vector2(x, y);
+
+            CreateParticlesCollision(RelativePosition.BOTTOM);
 
             // Signal GameController a block is down, so he can begin a new cycle
             gameController.GetComponent<GameController>().DoNewCycle();
@@ -122,19 +127,85 @@ public class PlayerController : MonoBehaviour
 
     private void MovePlayerLeft()
     {
-        if (previousHorizontalAxisValue >= 0)
+        if (lockDirection[RelativePosition.LEFT].Count == 0)
         {
-            previousHorizontalAxisValue = -1;
-            gameObject.transform.position = new Vector2(transform.position.x - 1, transform.position.y);
+            if (previousHorizontalAxisValue >= 0)
+            {
+                previousHorizontalAxisValue = -1;
+                gameObject.transform.position = new Vector2(transform.position.x - 1, transform.position.y);
+            }
         }
+        else
+        {
+            CreateParticlesCollision(RelativePosition.LEFT);
+        }
+    }
+
+    private void CreateParticlesCollision(RelativePosition position)
+    {
+        Vector2 particlesPosition = Vector2.zero;
+        GameObject particles = null;
+        switch (position)
+        {
+            case RelativePosition.LEFT:
+                switch (secondaryBlockPosition)
+                {
+                    case RelativePosition.LEFT:
+                        particlesPosition = new Vector2(transform.position.x - 2.5f, transform.position.y);
+                        break;
+                    default:
+                        particlesPosition = new Vector2(transform.position.x - 1.5f, transform.position.y);
+                        break;
+                }
+                particles = Instantiate(particleCollisionTemplate, particlesPosition, new Quaternion());
+                break;
+            case RelativePosition.RIGHT:
+                switch (secondaryBlockPosition)
+                {
+                    case RelativePosition.RIGHT:
+                        particlesPosition = new Vector2(transform.position.x + .5f, transform.position.y);
+                        break;
+                    default:
+                        particlesPosition = new Vector2(transform.position.x - .5f, transform.position.y);
+                        break;
+                }
+                particles = Instantiate(particleCollisionTemplate, particlesPosition, new Quaternion());
+                break;
+            case RelativePosition.BOTTOM:
+                switch (secondaryBlockPosition)
+                {
+                    case RelativePosition.BOTTOM:
+                        particlesPosition = new Vector2(transform.position.x - 1f, transform.position.y - 1f);
+                        break;
+                    case RelativePosition.TOP:
+                        particlesPosition = new Vector2(transform.position.x - 1f, transform.position.y);
+                        break;
+                    case RelativePosition.LEFT:
+                        particlesPosition = new Vector2(transform.position.x - 1.5f, transform.position.y);
+                        break;
+                    case RelativePosition.RIGHT:
+                        particlesPosition = new Vector2(transform.position.x - .5f, transform.position.y);
+                        break;
+                }
+                particles = Instantiate(particleImpactTemplate, particlesPosition, new Quaternion());
+                break;
+        }
+        Destroy(particles, particles.GetComponent<ParticleSystem>().main.duration);
     }
 
     private void MovePlayerRight()
     {
-        if (previousHorizontalAxisValue <= 0)
+        if (lockDirection[RelativePosition.RIGHT].Count == 0)
         {
-            previousHorizontalAxisValue = 1;
-            gameObject.transform.position = new Vector2(transform.position.x + 1, transform.position.y);
+            if (previousHorizontalAxisValue <= 0)
+            {
+                previousHorizontalAxisValue = 1;
+                gameObject.transform.position = new Vector2(transform.position.x + 1, transform.position.y);
+            }
+        }
+        else
+        {
+            CreateParticlesCollision(RelativePosition.RIGHT);
         }
     }
 

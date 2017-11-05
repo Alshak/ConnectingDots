@@ -77,7 +77,7 @@ public class GameController : MonoBehaviour
             {
                 yield return new WaitForSeconds(waitTime);
             }
-            while(MoveCellToLowerPosition(flyingCell))
+            while (MoveCellToLowerPosition(flyingCell))
             {
                 yield return new WaitForSeconds(waitTime);
             }
@@ -253,13 +253,10 @@ public class GameController : MonoBehaviour
 
     private void MarkFlyingCell(List<Transform> allCells, Vector2 cellPosition)
     {
-        List<Transform> upperCell = allCells.Where(c => cellPosition.y + 1 == c.position.y && cellPosition.x == c.position.x).ToList();
+        List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && cellPosition.x == c.position.x).OrderBy(c => c.position.y).ToList();
         if (upperCell.Count > 0 && upperCell[0].position.y > 1)
         {
-            Vector2 upperCellOriginalPosition = upperCell[0].position;
-            upperCell[0].GetComponent<BlockAnnotation>().UpInTheAir = true;
-            upperCell[0].GetComponent<BlockController>().ChangeText("L");
-            MarkFlyingCell(allCells, upperCell[0].position);
+            upperCell.ForEach(c => { c.GetComponent<BlockAnnotation>().UpInTheAir = true; c.GetComponent<BlockController>().ChangeText("L"); });
         }
     }
 

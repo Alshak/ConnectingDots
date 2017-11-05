@@ -4,8 +4,9 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - BlockA
-  - BlockB
+  - Block
+  - LeftColumn
+  - RightColumn
   layers:
   - Default
   - TransparentFX
@@ -40,9 +41,6 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Default
-    uniqueID: 0
-    locked: 0
   - name: Background
     uniqueID: 3570068173
     locked: 0
@@ -51,4 +49,7 @@ TagManager:
     locked: 0
   - name: Arena
     uniqueID: 3235000433
+    locked: 0
+  - name: Default
+    uniqueID: 0
     locked: 0

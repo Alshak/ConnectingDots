@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerEffects))]
 public class PlayerController : MonoBehaviour
 {
     public int playerNumber = 0;
@@ -28,26 +29,72 @@ public class PlayerController : MonoBehaviour
     public Transform secondaryBlock; // Secondary block, rotate
 
     bool canPlayerMove = true;
-    GameObject gameController;
-    Dictionary<RelativePosition, List<Collider2D>> lockDirection = new Dictionary<RelativePosition, List<Collider2D>>();
+    GameController gameController;
+    Dictionary<RelativePosition, List<Collider2D>> touchingColliders = new Dictionary<RelativePosition, List<Collider2D>>();
     RelativePosition secondaryBlockPosition = RelativePosition.TOP;
 
-    public GameObject particleCollisionTemplate;
-    public GameObject particleImpactTemplate;
+
 
     void Start()
     {
-        gameController = GameObject.FindGameObjectWithTag(TagNames.GameController);
+        gameController = GameObject.FindGameObjectWithTag(TagNames.GameController).GetComponent<GameController>();
         mainBlock = this.transform.FindChild(ObjectNames.MainBlock);
         secondaryBlock = this.transform.FindChild(ObjectNames.SecondaryBlock);
-        lockDirection = new Dictionary<RelativePosition, List<Collider2D>>();
-        lockDirection[RelativePosition.LEFT] = new List<Collider2D>();
-        lockDirection[RelativePosition.RIGHT] = new List<Collider2D>();
-        lockDirection[RelativePosition.BOTTOM] = new List<Collider2D>();
-        lockDirection[RelativePosition.TOP] = new List<Collider2D>();
+        touchingColliders = new Dictionary<RelativePosition, List<Collider2D>>();
+        touchingColliders[RelativePosition.LEFT] = new List<Collider2D>();
+        touchingColliders[RelativePosition.RIGHT] = new List<Collider2D>();
+        touchingColliders[RelativePosition.BOTTOM] = new List<Collider2D>();
+        touchingColliders[RelativePosition.TOP] = new List<Collider2D>();
     }
 
     void Update()
+    {
+        UpdatePlayerMovements();
+    }
+
+    public void HandleBlockStopped()
+    {
+        if (canPlayerMove)
+        {
+            LockPlayerMovements();
+
+            CreateParticlesCollision(RelativePosition.BOTTOM);
+
+            gameController.DoNewCycle();
+
+            this.enabled = false;
+        }
+    }
+
+    public void AddTouchingCollider(RelativePosition p, Collider2D c)
+    {
+        touchingColliders[p].Add(c);
+    }
+
+    public void RemoveTouchingCollider(RelativePosition p, Collider2D c)
+    {
+        touchingColliders[p].Remove(c);
+    }
+
+    private void LockPlayerMovements()
+    {
+        // Lock movement
+        canPlayerMove = false;
+
+        foreach (var blockController in this.gameObject.GetComponentsInChildren<BlockController>())
+        {
+            blockController.ChangeLayer(LayerMask.NameToLayer(LayerNames.Arena));
+            blockController.ChangeNameForDebug();
+        }
+
+        // Round the position to make sure we are always at the same position
+        float y = (float)Math.Round(transform.position.y, 0);
+        transform.position = new Vector2(transform.position.x, y);
+    }
+
+    #region Player Movement
+
+    void UpdatePlayerMovements()
     {
         if (canPlayerMove)
         {
@@ -78,45 +125,11 @@ public class PlayerController : MonoBehaviour
                 RotateSecondaryBlockRight();
             }
 
-            float fallSpeed = verticalAxis < 0 ? 0.04f : 0.02f;
+            float playerSpeed = gameController.playerSpeed;
+            float playerSprintSpeed = gameController.playerSprintSpeed;
 
+            float fallSpeed = verticalAxis < 0 ? playerSprintSpeed : playerSpeed;
             transform.position = new Vector2(transform.position.x, transform.position.y - fallSpeed);
-        }
-    }
-
-    public void LockDirection(RelativePosition p, Collider2D c)
-    {
-        lockDirection[p].Add(c);
-    }
-
-    public void UnlockDirection(RelativePosition p, Collider2D c)
-    {
-        lockDirection[p].Remove(c);
-    }
-
-    public void LockPlayerMovements()
-    {
-        if (canPlayerMove)
-        {
-            // Lock movement
-            canPlayerMove = false;
-
-            // Current object will act like a wall from the arena
-            foreach (var childLayer in this.gameObject.GetComponentsInChildren<ChangingLayer>())
-            {
-                childLayer.ChangeLayer(LayerMask.NameToLayer(LayerNames.Arena));
-            }
-
-            // Round the position to make sure we are always at the same position
-            int x = (int)Math.Round(transform.position.x, MidpointRounding.AwayFromZero);
-            int y = (int)Math.Round(transform.position.y, MidpointRounding.AwayFromZero);
-            transform.position = new Vector2(x, y);
-
-            CreateParticlesCollision(RelativePosition.BOTTOM);
-
-            // Signal GameController a block is down, so he can begin a new cycle
-            gameController.GetComponent<GameController>().DoNewCycle();
-            this.enabled = false;
         }
     }
 
@@ -125,9 +138,14 @@ public class PlayerController : MonoBehaviour
         previousHorizontalAxisValue = 0;
     }
 
+    private bool IsPositionAvailable(RelativePosition relativePosition)
+    {
+        return touchingColliders[relativePosition].Count == 0;
+    }
+
     private void MovePlayerLeft()
     {
-        if (lockDirection[RelativePosition.LEFT].Count == 0)
+        if (IsPositionAvailable(RelativePosition.LEFT))
         {
             if (previousHorizontalAxisValue >= 0)
             {
@@ -141,61 +159,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void CreateParticlesCollision(RelativePosition position)
-    {
-        Vector2 particlesPosition = Vector2.zero;
-        GameObject particles = null;
-        switch (position)
-        {
-            case RelativePosition.LEFT:
-                switch (secondaryBlockPosition)
-                {
-                    case RelativePosition.LEFT:
-                        particlesPosition = new Vector2(transform.position.x - 2.5f, transform.position.y);
-                        break;
-                    default:
-                        particlesPosition = new Vector2(transform.position.x - 1.5f, transform.position.y);
-                        break;
-                }
-                particles = Instantiate(particleCollisionTemplate, particlesPosition, new Quaternion());
-                break;
-            case RelativePosition.RIGHT:
-                switch (secondaryBlockPosition)
-                {
-                    case RelativePosition.RIGHT:
-                        particlesPosition = new Vector2(transform.position.x + .5f, transform.position.y);
-                        break;
-                    default:
-                        particlesPosition = new Vector2(transform.position.x - .5f, transform.position.y);
-                        break;
-                }
-                particles = Instantiate(particleCollisionTemplate, particlesPosition, new Quaternion());
-                break;
-            case RelativePosition.BOTTOM:
-                switch (secondaryBlockPosition)
-                {
-                    case RelativePosition.BOTTOM:
-                        particlesPosition = new Vector2(transform.position.x - 1f, transform.position.y - 1f);
-                        break;
-                    case RelativePosition.TOP:
-                        particlesPosition = new Vector2(transform.position.x - 1f, transform.position.y);
-                        break;
-                    case RelativePosition.LEFT:
-                        particlesPosition = new Vector2(transform.position.x - 1.5f, transform.position.y);
-                        break;
-                    case RelativePosition.RIGHT:
-                        particlesPosition = new Vector2(transform.position.x - .5f, transform.position.y);
-                        break;
-                }
-                particles = Instantiate(particleImpactTemplate, particlesPosition, new Quaternion());
-                break;
-        }
-        Destroy(particles, particles.GetComponent<ParticleSystem>().main.duration);
-    }
-
     private void MovePlayerRight()
     {
-        if (lockDirection[RelativePosition.RIGHT].Count == 0)
+        if (IsPositionAvailable(RelativePosition.RIGHT))
         {
             if (previousHorizontalAxisValue <= 0)
             {
@@ -214,19 +180,19 @@ public class PlayerController : MonoBehaviour
         switch (secondaryBlockPosition)
         {
             case RelativePosition.TOP:
-                if (lockDirection[RelativePosition.LEFT].Count == 0)
+                if (IsPositionAvailable(RelativePosition.LEFT))
                 {
                     secondaryBlockPosition = RelativePosition.LEFT;
                 }
                 break;
             case RelativePosition.LEFT:
-                if (lockDirection[RelativePosition.BOTTOM].Count == 0)
+                if (IsPositionAvailable(RelativePosition.BOTTOM))
                 {
                     secondaryBlockPosition = RelativePosition.BOTTOM;
                 }
                 break;
             case RelativePosition.BOTTOM:
-                if (lockDirection[RelativePosition.RIGHT].Count == 0)
+                if (IsPositionAvailable(RelativePosition.RIGHT))
                 {
                     secondaryBlockPosition = RelativePosition.RIGHT;
                 }
@@ -243,19 +209,19 @@ public class PlayerController : MonoBehaviour
         switch (secondaryBlockPosition)
         {
             case RelativePosition.TOP:
-                if (lockDirection[RelativePosition.RIGHT].Count == 0)
+                if (IsPositionAvailable(RelativePosition.RIGHT))
                 {
                     secondaryBlockPosition = RelativePosition.RIGHT;
                 }
                 break;
             case RelativePosition.RIGHT:
-                if (lockDirection[RelativePosition.BOTTOM].Count == 0)
+                if (IsPositionAvailable(RelativePosition.BOTTOM))
                 {
                     secondaryBlockPosition = RelativePosition.BOTTOM;
                 }
                 break;
             case RelativePosition.BOTTOM:
-                if (lockDirection[RelativePosition.LEFT].Count == 0)
+                if (IsPositionAvailable(RelativePosition.LEFT))
                 {
                     secondaryBlockPosition = RelativePosition.LEFT;
                 }
@@ -285,4 +251,12 @@ public class PlayerController : MonoBehaviour
                 break;
         }
     }
+    #endregion
+
+    #region Effects
+    private void CreateParticlesCollision(RelativePosition mainBlockPosition)
+    {
+        GetComponent<PlayerEffects>().CreateParticlesCollision(mainBlockPosition, secondaryBlockPosition);
+    }
+    #endregion
 }

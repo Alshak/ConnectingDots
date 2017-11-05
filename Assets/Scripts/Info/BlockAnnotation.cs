@@ -14,26 +14,12 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+**/
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class LockDirection : MonoBehaviour {
-    public RelativePosition direction = RelativePosition.LEFT;
-
-
-    void OnTriggerEnter2D(Collider2D other)
-    { 
-        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
-        {
-              transform.GetComponentInParent<PlayerController>().LockDirection(direction,other);
-        }
-    }
-
-    void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
-        {
-            transform.GetComponentInParent<PlayerController>().UnlockDirection(direction, other);
-        }
-    }
+public class BlockAnnotation : MonoBehaviour {
+    public bool UpInTheAir { get; set; } 
+    public Vector3 NewPosition { get; set; }
 }

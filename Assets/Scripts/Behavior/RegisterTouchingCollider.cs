@@ -14,13 +14,26 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-**/
-public class TagNames
-{
-    public const string GameController = "GameController";
-    public const string Player = "Player";
-    public const string Block = "Block";
+ **/
+using UnityEngine;
 
-    public const string LeftColumn = "LeftColumn";
-    public const string RightColumn = "RightColumn";
+public class RegisterTouchingCollider : MonoBehaviour {
+    public RelativePosition direction = RelativePosition.LEFT;
+
+
+    void OnTriggerEnter2D(Collider2D other)
+    { 
+        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
+        {
+              transform.GetComponentInParent<PlayerController>().AddTouchingCollider(direction,other);
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
+        {
+            transform.GetComponentInParent<PlayerController>().RemoveTouchingCollider(direction, other);
+        }
+    }
 }

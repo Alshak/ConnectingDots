@@ -23,7 +23,7 @@ public class StopOnTouch : MonoBehaviour
     {
         if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
         {
-            transform.GetComponentInParent<PlayerController>().LockPlayerMovements();
+            transform.GetComponentInParent<PlayerController>().HandleBlockStopped();
             this.enabled = false;
         }
     }

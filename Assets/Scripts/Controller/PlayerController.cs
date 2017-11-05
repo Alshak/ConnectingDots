@@ -33,7 +33,7 @@ public class PlayerController : MonoBehaviour
     Dictionary<RelativePosition, List<Collider2D>> touchingColliders = new Dictionary<RelativePosition, List<Collider2D>>();
     RelativePosition secondaryBlockPosition = RelativePosition.TOP;
 
-
+    bool slowMo = false;
 
     void Start()
     {
@@ -45,6 +45,16 @@ public class PlayerController : MonoBehaviour
         touchingColliders[RelativePosition.RIGHT] = new List<Collider2D>();
         touchingColliders[RelativePosition.BOTTOM] = new List<Collider2D>();
         touchingColliders[RelativePosition.TOP] = new List<Collider2D>();
+    }
+
+    internal void SetNormalSpeedForPlayer()
+    {
+        slowMo = false;
+    }
+
+    internal void SlowPlayer()
+    {
+        slowMo = true;
     }
 
     void Update()
@@ -114,21 +124,21 @@ public class PlayerController : MonoBehaviour
             else
             {
                 CenterHorizontalAxis();
-            }
-
-            if (leftRotation)
-            {
-                RotateSecondaryBlockLeft();
-            }
-            else if (rightRotation)
-            {
-                RotateSecondaryBlockRight();
+                if (leftRotation)
+                {
+                    RotateSecondaryBlockLeft();
+                }
+                else if (rightRotation)
+                {
+                    RotateSecondaryBlockRight();
+                }
             }
 
             float playerSpeed = gameController.playerSpeed;
             float playerSprintSpeed = gameController.playerSprintSpeed;
 
             float fallSpeed = verticalAxis < 0 ? playerSprintSpeed : playerSpeed;
+            fallSpeed = slowMo ? fallSpeed * 0.4f : fallSpeed;
             transform.position = new Vector2(transform.position.x, transform.position.y - fallSpeed);
         }
     }
@@ -184,6 +194,10 @@ public class PlayerController : MonoBehaviour
                 {
                     secondaryBlockPosition = RelativePosition.LEFT;
                 }
+                else if (IsPositionAvailable(RelativePosition.BOTTOM))
+                {
+                    secondaryBlockPosition = RelativePosition.BOTTOM;
+                }
                 break;
             case RelativePosition.LEFT:
                 if (IsPositionAvailable(RelativePosition.BOTTOM))
@@ -195,6 +209,10 @@ public class PlayerController : MonoBehaviour
                 if (IsPositionAvailable(RelativePosition.RIGHT))
                 {
                     secondaryBlockPosition = RelativePosition.RIGHT;
+                }
+                else
+                {
+                    secondaryBlockPosition = RelativePosition.TOP;
                 }
                 break;
             case RelativePosition.RIGHT:
@@ -213,6 +231,10 @@ public class PlayerController : MonoBehaviour
                 {
                     secondaryBlockPosition = RelativePosition.RIGHT;
                 }
+                else if (IsPositionAvailable(RelativePosition.BOTTOM))
+                {
+                    secondaryBlockPosition = RelativePosition.BOTTOM;
+                }
                 break;
             case RelativePosition.RIGHT:
                 if (IsPositionAvailable(RelativePosition.BOTTOM))
@@ -224,6 +246,10 @@ public class PlayerController : MonoBehaviour
                 if (IsPositionAvailable(RelativePosition.LEFT))
                 {
                     secondaryBlockPosition = RelativePosition.LEFT;
+                }
+                else
+                {
+                    secondaryBlockPosition = RelativePosition.TOP;
                 }
                 break;
             case RelativePosition.LEFT:

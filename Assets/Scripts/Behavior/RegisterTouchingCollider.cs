@@ -20,12 +20,15 @@ using UnityEngine;
 public class RegisterTouchingCollider : MonoBehaviour {
     public RelativePosition direction = RelativePosition.LEFT;
 
-
     void OnTriggerEnter2D(Collider2D other)
     { 
         if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
         {
-              transform.GetComponentInParent<PlayerController>().AddTouchingCollider(direction,other);
+            transform.GetComponentInParent<PlayerController>().AddTouchingCollider(direction,other);
+            if(direction == RelativePosition.BOTTOM)
+            {
+                transform.GetComponentInParent<PlayerController>().SlowPlayer();
+            }
         }
     }
 
@@ -34,6 +37,10 @@ public class RegisterTouchingCollider : MonoBehaviour {
         if (other.gameObject.layer == LayerMask.NameToLayer(LayerNames.Arena))
         {
             transform.GetComponentInParent<PlayerController>().RemoveTouchingCollider(direction, other);
+            if (direction == RelativePosition.BOTTOM)
+            {
+                transform.GetComponentInParent<PlayerController>().SetNormalSpeedForPlayer();
+            }
         }
     }
 }

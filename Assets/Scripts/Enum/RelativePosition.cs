@@ -17,8 +17,8 @@
 **/
 public enum RelativePosition
 {
-    TOP,
-    LEFT,
-    RIGHT,
-    BOTTOM
+    TOP = 0,
+    RIGHT = 1,
+    BOTTOM = 2,
+    LEFT = 3
 };

@@ -76,6 +76,11 @@ public class PlayerController : MonoBehaviour
         secondaryBlock.GetComponent<BlockColor>().Color = secondColor;
     }
 
+    private void ReverseColors()
+    {
+        SetColors(secondaryBlock.GetComponent<BlockColor>().Color, mainBlock.GetComponent<BlockColor>().Color);
+    }
+
     void Update()
     {
         UpdatePlayerMovements();
@@ -206,81 +211,43 @@ public class PlayerController : MonoBehaviour
 
     private void RotateSecondaryBlockLeft()
     {
-        switch (secondaryBlockPosition)
+        RelativePosition nextPositionAvailable = secondaryBlockPosition;
+        do
         {
-            case RelativePosition.TOP:
-                if (IsPositionAvailable(RelativePosition.LEFT))
-                {
-                    secondaryBlockPosition = RelativePosition.LEFT;
-                }
-                else if (IsPositionAvailable(RelativePosition.BOTTOM))
-                {
-                    secondaryBlockPosition = RelativePosition.BOTTOM;
-                }
-                break;
-            case RelativePosition.LEFT:
-                if (IsPositionAvailable(RelativePosition.BOTTOM))
-                {
-                    secondaryBlockPosition = RelativePosition.BOTTOM;
-                }
-                break;
-            case RelativePosition.BOTTOM:
-                if (IsPositionAvailable(RelativePosition.RIGHT))
-                {
-                    secondaryBlockPosition = RelativePosition.RIGHT;
-                }
-                else
-                {
-                    secondaryBlockPosition = RelativePosition.TOP;
-                }
-                break;
-            case RelativePosition.RIGHT:
-                secondaryBlockPosition = RelativePosition.TOP;
-                break;
+            nextPositionAvailable = (RelativePosition)((int)nextPositionAvailable - 1 < 0 ? 3 : (int)nextPositionAvailable - 1);
+        } while (!IsPositionAvailable(nextPositionAvailable));
+
+        if (nextPositionAvailable == secondaryBlockPosition || secondaryBlockPosition == (RelativePosition)((int)(nextPositionAvailable + 2) % 4))
+        {
+            ReverseColors();
         }
-        ApplySecondaryBlockPosition();
+        else
+        {
+            secondaryBlockPosition = nextPositionAvailable;
+            MoveSecondaryBlockPosition();
+        }
     }
-
-
 
     private void RotateSecondaryBlockRight()
     {
-        switch (secondaryBlockPosition)
+        RelativePosition nextPositionAvailable = secondaryBlockPosition;
+        do
         {
-            case RelativePosition.TOP:
-                if (IsPositionAvailable(RelativePosition.RIGHT))
-                {
-                    secondaryBlockPosition = RelativePosition.RIGHT;
-                }
-                else if (IsPositionAvailable(RelativePosition.BOTTOM))
-                {
-                    secondaryBlockPosition = RelativePosition.BOTTOM;
-                }
-                break;
-            case RelativePosition.RIGHT:
-                if (IsPositionAvailable(RelativePosition.BOTTOM))
-                {
-                    secondaryBlockPosition = RelativePosition.BOTTOM;
-                }
-                break;
-            case RelativePosition.BOTTOM:
-                if (IsPositionAvailable(RelativePosition.LEFT))
-                {
-                    secondaryBlockPosition = RelativePosition.LEFT;
-                }
-                else
-                {
-                    secondaryBlockPosition = RelativePosition.TOP;
-                }
-                break;
-            case RelativePosition.LEFT:
-                secondaryBlockPosition = RelativePosition.TOP;
-                break;
+            nextPositionAvailable = (RelativePosition)((int)(nextPositionAvailable + 1) % 4);
+        } while (!IsPositionAvailable(nextPositionAvailable));
+
+        if (nextPositionAvailable == secondaryBlockPosition || secondaryBlockPosition == (RelativePosition)((int)(nextPositionAvailable + 2) % 4))
+        {
+            ReverseColors();
         }
-        ApplySecondaryBlockPosition();
+        else
+        {
+            secondaryBlockPosition = nextPositionAvailable;
+            MoveSecondaryBlockPosition();
+        }
     }
 
-    private void ApplySecondaryBlockPosition()
+    private void MoveSecondaryBlockPosition()
     {
         switch (secondaryBlockPosition)
         {

@@ -159,6 +159,7 @@ MonoBehaviour:
     type: 2}
   leftColumn: {fileID: 1713256377}
   rightColumn: {fileID: 1717350965}
+  arenaLines: {fileID: 1483611708}
   mainCamera: {fileID: 1901991950}
   debugGlobalController: {fileID: 1348526006}
 --- !u!4 &1088340885
@@ -232,7 +233,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1483611709}
   m_Layer: 8
-  m_Name: CenterBase
+  m_Name: ArenaLines
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

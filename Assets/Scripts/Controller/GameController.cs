@@ -31,14 +31,15 @@ public class GameController : MonoBehaviour
 
     public GameObject leftColumn;
     public GameObject rightColumn;
+    public GameObject arenaLines;
     public GameObject mainCamera;
     public GameObject debugGlobalController;
 
     private const int leftColumnIndex = 0;
     private const int rightColumnIndex = 6;
     private const int columnSize = 15;
-    private const float blocksAutofallSpeed = 0.4f;
-    private const float columnRecreationSpeed = 0.2f;
+    private const float blocksAutofallSpeed = 0.2f;
+    private const float columnRecreationSpeed = 0.1f;
     private IEnumerator coroutine;
     private GameObject nextPlayer;
     private GlobalController globalController;
@@ -61,6 +62,7 @@ public class GameController : MonoBehaviour
         CreateNextPlayer();
         CreatePlayer();
         CreateFloor();
+        CreateCeiling();
         SetupCamera();
     }
 
@@ -82,7 +84,7 @@ public class GameController : MonoBehaviour
 
     public void DoNewCycle()
     {
-        coroutine = StepByStepBlockMovement(blocksAutofallSpeed / globalController.GameSpeed);
+        coroutine = StepByStepBlockMovement(blocksAutofallSpeed);
         StartCoroutine(coroutine);
 
     }
@@ -169,17 +171,26 @@ public class GameController : MonoBehaviour
         {
             GameObject floor = Instantiate(floorTemplate, new Vector2(padding, 0), Quaternion.identity);
             floor.GetComponent<BlockColor>().Color = 6;
+            floor.name = "Floor";
+            floor.transform.parent = arenaLines.transform;
             padding++;
         }
+
+    }
+
+    private void CreateCeiling()
+    {
         float ceilingSize = 0.5f;
-        padding = leftColumnIndex + ceilingSize * 1.5f;
-        while (padding <= rightColumnIndex - ceilingSize)
+        float padding = leftColumnIndex - 0.5f * ceilingSize;
+        while (padding <= rightColumnIndex + 0.5f * ceilingSize)
         {
             GameObject ceiling = Instantiate(floorTemplate, new Vector2(padding, columnSize + ceilingSize * .5f), Quaternion.identity);
             ceiling.transform.localScale = new Vector2(ceilingSize, ceilingSize);
             ceiling.GetComponent<BlockColor>().Color = 7;
             ceiling.GetComponent<SpriteRenderer>().sortingLayerName = SortingLayerNames.Background;
             ceiling.GetComponent<BoxCollider2D>().enabled = false;
+            ceiling.name = "Ceiling";
+            ceiling.transform.parent = arenaLines.transform;
             padding += ceilingSize;
         }
     }

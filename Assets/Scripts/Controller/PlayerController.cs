@@ -60,6 +60,11 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        UpdatePlayerMovements();
+    }
+
     public void SetNormalSpeedForPlayer()
     {
         slowMo = false;
@@ -79,11 +84,6 @@ public class PlayerController : MonoBehaviour
     private void ReverseColors()
     {
         SetColors(secondaryBlock.GetComponent<BlockColor>().Color, mainBlock.GetComponent<BlockColor>().Color);
-    }
-
-    void Update()
-    {
-        UpdatePlayerMovements();
     }
 
     public void HandleBlockStopped()
@@ -212,12 +212,8 @@ public class PlayerController : MonoBehaviour
     private void RotateSecondaryBlockLeft()
     {
         RelativePosition nextPositionAvailable = secondaryBlockPosition;
-        do
-        {
-            nextPositionAvailable = (RelativePosition)((int)nextPositionAvailable - 1 < 0 ? 3 : (int)nextPositionAvailable - 1);
-        } while (!IsPositionAvailable(nextPositionAvailable));
-
-        if (nextPositionAvailable == secondaryBlockPosition || secondaryBlockPosition == (RelativePosition)((int)(nextPositionAvailable + 2) % 4))
+        nextPositionAvailable = (RelativePosition)((int)nextPositionAvailable - 1 < 0 ? 3 : (int)nextPositionAvailable - 1);
+        if (!IsPositionAvailable(nextPositionAvailable))
         {
             ReverseColors();
         }
@@ -231,13 +227,8 @@ public class PlayerController : MonoBehaviour
     private void RotateSecondaryBlockRight()
     {
         RelativePosition nextPositionAvailable = secondaryBlockPosition;
-        do
-        {
-            nextPositionAvailable = (RelativePosition)((int)(nextPositionAvailable + 1) % 4);
-        } while (!IsPositionAvailable(nextPositionAvailable));
-
-        if (nextPositionAvailable == secondaryBlockPosition || secondaryBlockPosition == (RelativePosition)((int)(nextPositionAvailable + 2) % 4))
-        {
+        nextPositionAvailable = (RelativePosition)((int)(nextPositionAvailable + 1) % 4);
+        if (!IsPositionAvailable(nextPositionAvailable)) { 
             ReverseColors();
         }
         else

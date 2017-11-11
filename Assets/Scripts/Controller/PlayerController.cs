@@ -30,16 +30,14 @@ public class PlayerController : MonoBehaviour
 
     bool canPlayerMove = true;
     GameController gameController;
+    GlobalController globalController;
     Dictionary<RelativePosition, List<Collider2D>> touchingColliders = new Dictionary<RelativePosition, List<Collider2D>>();
     RelativePosition secondaryBlockPosition = RelativePosition.TOP;
 
     bool slowMo = false;
 
-    void Start()
+    void Awake()
     {
-        gameController = GameObject.FindGameObjectWithTag(TagNames.GameController).GetComponent<GameController>();
-        mainBlock = this.transform.FindChild(ObjectNames.MainBlock);
-        secondaryBlock = this.transform.FindChild(ObjectNames.SecondaryBlock);
         touchingColliders = new Dictionary<RelativePosition, List<Collider2D>>();
         touchingColliders[RelativePosition.LEFT] = new List<Collider2D>();
         touchingColliders[RelativePosition.RIGHT] = new List<Collider2D>();
@@ -47,14 +45,35 @@ public class PlayerController : MonoBehaviour
         touchingColliders[RelativePosition.TOP] = new List<Collider2D>();
     }
 
-    internal void SetNormalSpeedForPlayer()
+    void Start()
+    {
+        gameController = GameObject.FindGameObjectWithTag(TagNames.GameController).GetComponent<GameController>();
+        globalController = GameObject.FindGameObjectWithTag(TagNames.GlobalController).GetComponent<GlobalController>();
+        mainBlock = this.transform.FindChild(ObjectNames.MainBlock);
+        secondaryBlock = this.transform.FindChild(ObjectNames.SecondaryBlock);
+
+        if (gameController != null)
+        {
+            List<int> colors = gameController.GetNextPlayerColors();
+            SetColors(colors[0], colors[1]);
+            gameController.ChangeNextPlayerColors();
+        }
+    }
+
+    public void SetNormalSpeedForPlayer()
     {
         slowMo = false;
     }
 
-    internal void SlowPlayer()
+    public void SlowPlayer()
     {
         slowMo = true;
+    }
+
+    public void SetColors(int firstColor, int secondColor)
+    {
+        mainBlock.GetComponent<BlockColor>().Color = firstColor;
+        secondaryBlock.GetComponent<BlockColor>().Color = secondColor;
     }
 
     void Update()
@@ -110,8 +129,8 @@ public class PlayerController : MonoBehaviour
         {
             float horizontalAxis = Input.GetAxis("Horizontal");
             float verticalAxis = Input.GetAxis("Vertical");
-            bool leftRotation = Input.GetButtonDown("RotL1");
-            bool rightRotation = Input.GetButtonDown("RotR1");
+            bool leftRotation = Input.GetButtonDown("RotationLeft");
+            bool rightRotation = Input.GetButtonDown("RotationRight");
 
             if (horizontalAxis < 0)
             {
@@ -134,8 +153,8 @@ public class PlayerController : MonoBehaviour
                 }
             }
 
-            float playerSpeed = gameController.playerSpeed;
-            float playerSprintSpeed = gameController.playerSprintSpeed;
+            float playerSpeed = globalController.PlayerSpeed;
+            float playerSprintSpeed = globalController.PlayerSprintSpeed;
 
             float fallSpeed = verticalAxis < 0 ? playerSprintSpeed : playerSpeed;
             fallSpeed = slowMo ? fallSpeed * 0.4f : fallSpeed;
@@ -221,6 +240,8 @@ public class PlayerController : MonoBehaviour
         }
         ApplySecondaryBlockPosition();
     }
+
+
 
     private void RotateSecondaryBlockRight()
     {

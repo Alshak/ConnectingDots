@@ -15,13 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
-public class TagNames
+public class SortingLayerNames
 {
-    public const string GameController = "GameController";
-    public const string Player = "Player";
-    public const string Block = "Block";
-    public const string GlobalController = "GlobalController";
-
-    public const string LeftColumn = "LeftColumn";
-    public const string RightColumn = "RightColumn";
+    public const string Background = "Background";
 }

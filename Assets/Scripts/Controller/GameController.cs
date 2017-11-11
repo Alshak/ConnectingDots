@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
 using UnityEngine;
 using System.Linq;
-using System;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.SceneManagement;
@@ -26,30 +25,52 @@ public class GameController : MonoBehaviour
 {
 
     public GameObject playerTemplate;
-    public GameObject leftColumn;
-    public GameObject rightColumn;
-    public Sprite[] colors;
+    public GameObject nextPlayerTemplate;
     public GameObject columnCellTemplate;
     public GameObject floorTemplate;
+
+    public GameObject leftColumn;
+    public GameObject rightColumn;
     public GameObject mainCamera;
+    public GameObject debugGlobalController;
 
     private const int leftColumnIndex = 0;
     private const int rightColumnIndex = 6;
     private const int columnSize = 15;
-
-    public float playerSpeed = 0.01f;
-    public float playerSprintSpeed = 0.05f;
-
-    private IEnumerator coroutine;
     private const float blocksAutofallSpeed = 0.4f;
     private const float columnRecreationSpeed = 0.2f;
+    private IEnumerator coroutine;
+    private GameObject nextPlayer;
+    private GlobalController globalController;
+
 
     void Start()
     {
+        var menuGlobalController = GameObject.FindGameObjectWithTag(TagNames.GlobalController);
+        if (menuGlobalController == null)
+        {
+            debugGlobalController.SetActive(true);
+            globalController = debugGlobalController.GetComponent<GlobalController>();
+            globalController.GameSpeed = 5;
+        }
+        else
+        {
+            globalController = menuGlobalController.GetComponent<GlobalController>();
+        }
         CreateColumns();
-        CreateNewPlayer();
+        CreateNextPlayer();
+        CreatePlayer();
         CreateFloor();
         SetupCamera();
+    }
+
+    void Update()
+    {
+        bool escape = Input.GetButtonDown("Escape");
+        if (escape)
+        {
+            EndGame();
+        }
     }
 
     private void SetupCamera()
@@ -61,12 +82,12 @@ public class GameController : MonoBehaviour
 
     public void DoNewCycle()
     {
-        coroutine = WaitAndPrint(blocksAutofallSpeed);
+        coroutine = StepByStepBlockMovement(blocksAutofallSpeed / globalController.GameSpeed);
         StartCoroutine(coroutine);
 
     }
 
-    private IEnumerator WaitAndPrint(float waitTime)
+    private IEnumerator StepByStepBlockMovement(float waitTime)
     {
         List<Transform> flyingCell = new List<Transform>();
         do
@@ -83,8 +104,25 @@ public class GameController : MonoBehaviour
             }
         } while (flyingCell.Count != 0);
         yield return RecreateColumns();
-        CreateNewPlayer();
+        if (!IsEndGame())
+        {
+            CreatePlayer();
+        }
+        else
+        {
+            EndGame();
+        }
     }
+
+    #region Block color
+
+    public List<int> GetNextPlayerColors()
+    {
+        BlockColor[] blockColors = nextPlayer.GetComponentsInChildren<BlockColor>();
+        List<int> colors = blockColors.Select(c => c.Color).ToList();
+        return colors;
+    }
+    #endregion
 
     #region Create every objects
     private void CreateColumns()
@@ -126,32 +164,58 @@ public class GameController : MonoBehaviour
 
     private void CreateFloor()
     {
-        int idx = leftColumnIndex;
-        while (idx <= rightColumnIndex)
+        float padding = leftColumnIndex;
+        while (padding <= rightColumnIndex)
         {
-            Instantiate(floorTemplate, new Vector2(idx, 0), Quaternion.identity);
-            idx++;
+            GameObject floor = Instantiate(floorTemplate, new Vector2(padding, 0), Quaternion.identity);
+            floor.GetComponent<BlockColor>().Color = 6;
+            padding++;
         }
-
+        float ceilingSize = 0.5f;
+        padding = leftColumnIndex + ceilingSize * 1.5f;
+        while (padding <= rightColumnIndex - ceilingSize)
+        {
+            GameObject ceiling = Instantiate(floorTemplate, new Vector2(padding, columnSize + ceilingSize * .5f), Quaternion.identity);
+            ceiling.transform.localScale = new Vector2(ceilingSize, ceilingSize);
+            ceiling.GetComponent<BlockColor>().Color = 7;
+            ceiling.GetComponent<SpriteRenderer>().sortingLayerName = SortingLayerNames.Background;
+            ceiling.GetComponent<BoxCollider2D>().enabled = false;
+            padding += ceilingSize;
+        }
     }
 
-    private void CreateNewPlayer()
+    private bool IsEndGame()
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag(TagNames.Player);
 
         // Check the maximum Y position of all the blocks in the current game
         float maxPlayerPositionInY = players.Length > 0 ? players.Max(p => p.transform.position.y) : 0;
 
-        if (maxPlayerPositionInY < columnSize - 1)
-        {
-            Instantiate(
+        return maxPlayerPositionInY >= columnSize;
+    }
+
+    private void CreatePlayer()
+    {
+        Instantiate(
                 playerTemplate,
-                new Vector2((int)Math.Round((leftColumnIndex + rightColumnIndex) / 2d, MidpointRounding.AwayFromZero), columnSize),
+                new Vector2((int)System.Math.Round((leftColumnIndex + rightColumnIndex) / 2d, System.MidpointRounding.AwayFromZero), columnSize + .5f),
                 playerTemplate.transform.rotation);
-        }
-        else
+    }
+
+    private void CreateNextPlayer()
+    {
+        nextPlayer = Instantiate(
+            nextPlayerTemplate,
+            new Vector2(rightColumnIndex + 3, columnSize - 3),
+            nextPlayerTemplate.transform.rotation);
+    }
+
+    public void ChangeNextPlayerColors()
+    {
+        BlockColor[] blockColors = nextPlayer.GetComponentsInChildren<BlockColor>();
+        foreach (BlockColor blockColor in blockColors)
         {
-            EndGame();
+            blockColor.Color = globalController.GetRandomColor();
         }
     }
     #endregion
@@ -307,7 +371,7 @@ public class GameController : MonoBehaviour
 
     private void EndGame()
     {
-        int scene = SceneManager.GetActiveScene().buildIndex;
+        int scene = SceneManager.GetActiveScene().buildIndex - 1;
         SceneManager.LoadScene(scene, LoadSceneMode.Single);
     }
 

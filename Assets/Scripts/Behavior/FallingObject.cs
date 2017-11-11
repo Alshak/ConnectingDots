@@ -17,39 +17,29 @@
 **/
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
-public class BlockColor : MonoBehaviour
-{
-    private const int NO_COLOR_DEFINED = -1;
-    private int color = NO_COLOR_DEFINED;
-    private int futureColor = NO_COLOR_DEFINED;
-    public int Color
-    {
-        get
-        {
-            return this.color;
-        }
-        set
-        {
-            if (globalController != null)
-            {
-                this.color = value;
-                GetComponent<SpriteRenderer>().sprite = globalController.colors[color];
-            }
-            else
-            {
-                futureColor = value;
-            }
-        }
-    }
-    private GlobalController globalController;
+public class FallingObject : MonoBehaviour {
 
-    public void Start()
+    GlobalController globalController;
+    public float destroyY = -1.5f;
+    // Use this for initialization
+    void Start ()
     {
         globalController = GameObject.FindGameObjectWithTag(TagNames.GlobalController).GetComponent<GlobalController>();
-        if (globalController != null && color == NO_COLOR_DEFINED)
+
+    }
+	
+	// Update is called once per frame
+	void Update () {
+        float verticalAxis = Input.GetAxis("Vertical");
+
+        float playerSpeed = globalController.PlayerSpeed;
+        float playerSprintSpeed = globalController.PlayerSprintSpeed;
+
+        float fallSpeed = verticalAxis < 0 ? playerSprintSpeed : playerSpeed;
+        transform.position = new Vector2(transform.position.x, transform.position.y - fallSpeed);
+        if(transform.position.y < destroyY)
         {
-            Color = futureColor != NO_COLOR_DEFINED ? futureColor : globalController.GetRandomColor();
+            Destroy(gameObject);
         }
     }
 }

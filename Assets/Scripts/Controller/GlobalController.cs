@@ -11,19 +11,19 @@ public class GlobalController : MonoBehaviour
     {
         get
         {
-            return GameSpeed * defaultPlayerSpeed;
+            return GameSpeed * defaultIncPlayerSpeed;
         }
     }
     public float PlayerSprintSpeed
     {
         get
         {
-            return GameSpeed * defaultSprintSpeed;
+            return Mathf.Max(0.18f, Mathf.Min(GameSpeed * defaultIncSprintSpeed, 0.35f));
         }
     }
 
-    private const float defaultPlayerSpeed = 0.02f;
-    private const float defaultSprintSpeed = 0.06f;
+    private const float defaultIncPlayerSpeed = 0.01f;
+    private const float defaultIncSprintSpeed = 0.02f;
     private static GameObject globalControllerInstance = null;
 
     void Awake()
@@ -38,7 +38,7 @@ public class GlobalController : MonoBehaviour
         }
         NbColors = 4;
     }
-    
+
     public int GetRandomColor()
     {
         return Random.Range(0, NbColors);

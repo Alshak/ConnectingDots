@@ -157,7 +157,7 @@ public class PlayerController : MonoBehaviour
             float playerSprintSpeed = globalController.PlayerSprintSpeed;
 
             float fallSpeed = verticalAxis < 0 ? playerSprintSpeed : playerSpeed;
-            fallSpeed = slowMo ? fallSpeed * 0.4f : fallSpeed;
+            fallSpeed = slowMo ? fallSpeed * 0.2f : fallSpeed;
             transform.position = new Vector2(transform.position.x, transform.position.y - fallSpeed);
         }
     }

@@ -36,7 +36,7 @@ public class GlobalController : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             globalControllerInstance = this.gameObject;
         }
-        NbColors = 4;
+        NbColors = 2;
     }
 
     public int GetRandomColor()

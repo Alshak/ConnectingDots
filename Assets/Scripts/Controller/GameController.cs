@@ -20,6 +20,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System;
 
 public class GameController : MonoBehaviour
 {
@@ -34,6 +36,8 @@ public class GameController : MonoBehaviour
     public GameObject arenaLines;
     public GameObject mainCamera;
     public GameObject debugGlobalController;
+    public Text scoreText;
+    public int currentScore = 0;
 
     private const int leftColumnIndex = 0;
     private const int rightColumnIndex = 6;
@@ -43,8 +47,9 @@ public class GameController : MonoBehaviour
     private IEnumerator coroutine;
     private GameObject nextPlayer;
     private GlobalController globalController;
-
-
+    private string scoreFormat = "000000000000000";
+    private float timeToNextSpeedUp;
+    private const float timeBetweenEachSpeedUp = 45;
     void Start()
     {
         var menuGlobalController = GameObject.FindGameObjectWithTag(TagNames.GlobalController);
@@ -64,6 +69,8 @@ public class GameController : MonoBehaviour
         CreateFloor();
         CreateCeiling();
         SetupCamera();
+        scoreText.text = currentScore.ToString(scoreFormat);
+        timeToNextSpeedUp = timeBetweenEachSpeedUp;
     }
 
     void Update()
@@ -72,6 +79,15 @@ public class GameController : MonoBehaviour
         if (escape)
         {
             EndGame();
+        }
+        timeToNextSpeedUp -= Time.deltaTime;
+        if(timeToNextSpeedUp < 0)
+        {
+            timeToNextSpeedUp = Math.Min(globalController.GameSpeed * 6, timeBetweenEachSpeedUp);
+            if (globalController.GameSpeed < 20)
+            {
+                globalController.GameSpeed++;
+            }
         }
     }
 
@@ -92,9 +108,13 @@ public class GameController : MonoBehaviour
     private IEnumerator StepByStepBlockMovement(float waitTime)
     {
         List<Transform> flyingCell = new List<Transform>();
+        int scoreIteration = 1;
         do
         {
-            List<Transform> allCells = ComputeConnectingSquares();
+            List<Transform> allCells = FindAllCells();
+            List<int> removedCells = ComputeConnectingSquares(ref allCells);
+            currentScore += removedCells.Count * removedCells.Sum() * globalController.GameSpeed * 10 * scoreIteration;
+            scoreText.text = currentScore.ToString(scoreFormat);
             flyingCell = ComputeFlyingCellNewPosition(allCells);
             if (flyingCell.Count != 0)
             {
@@ -104,8 +124,10 @@ public class GameController : MonoBehaviour
             {
                 yield return new WaitForSeconds(waitTime);
             }
+            scoreIteration *= 2;
         } while (flyingCell.Count != 0);
         yield return RecreateColumns();
+
         if (!IsEndGame())
         {
             CreatePlayer();
@@ -232,7 +254,24 @@ public class GameController : MonoBehaviour
     #endregion
 
     #region Compute Connecting Squares
-    private List<Transform> ComputeConnectingSquares()
+    private List<int> ComputeConnectingSquares(ref List<Transform> allCells)
+    {
+        Dictionary<int, List<Transform>> sortedColors = allCells.GroupBy(c => c.GetComponent<BlockColor>().Color).ToDictionary(c => c.Key, c => c.ToList());
+        List<int> nbRemovedCells = new List<int>();
+        foreach (var color in sortedColors.Keys) // Groups are sort by colors
+        {
+            List<List<Transform>> groupsOfCells = GroupConnectedCells(sortedColors[color]);
+            DisplayGroupNumber(groupsOfCells);
+            nbRemovedCells.Add(SearchConnectedLines(ref allCells, groupsOfCells));
+        }
+        return nbRemovedCells;
+    }
+
+    /// <summary>
+    /// Find all cells, including columns
+    /// </summary>
+    /// <returns></returns>
+    private List<Transform> FindAllCells()
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag(TagNames.Player);
 
@@ -241,16 +280,14 @@ public class GameController : MonoBehaviour
         Transform[] playersTransform = players.SelectMany(p => p.GetComponentsInChildren<Transform>()).ToArray();
 
         List<Transform> allCells = leftCells.Concat(playersTransform).Concat(rightCells).Where(p => p.GetComponent<BlockController>() != null).OrderBy(p => p.position.y).ThenBy(p => p.position.x).ToList();
-        Dictionary<int, List<Transform>> sortedColors = allCells.GroupBy(c => c.GetComponent<BlockColor>().Color).ToDictionary(c => c.Key, c => c.ToList());
-        foreach (var color in sortedColors.Keys) // Groups are sort by colors
-        {
-            List<List<Transform>> groupsOfCells = GroupConnectedCells(sortedColors[color]);
-            DisplayGroupNumber(groupsOfCells);
-            SearchConnectedLines(ref allCells, groupsOfCells);
-        }
         return allCells;
     }
 
+    /// <summary>
+    /// Group cells of same color that near each other
+    /// </summary>
+    /// <param name="sortedCells"></param>
+    /// <returns></returns>
     private static List<List<Transform>> GroupConnectedCells(List<Transform> sortedCells)
     {
         Queue<Transform> stackedCells = new Queue<Transform>(sortedCells);
@@ -294,6 +331,10 @@ public class GameController : MonoBehaviour
         return groupsOfCells;
     }
 
+    /// <summary>
+    /// Display group cell if DebugText is enabled on block controller (debug purpose)
+    /// </summary>
+    /// <param name="groupsOfCells"></param>
     private void DisplayGroupNumber(List<List<Transform>> groupsOfCells)
     {
         for (int i = 0; i < groupsOfCells.Count; i++)
@@ -305,8 +346,15 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void SearchConnectedLines(ref List<Transform> allCells, List<List<Transform>> groupsOfCells)
+    /// <summary>
+    /// Remove connected lines and return the number of removed cells
+    /// </summary>
+    /// <param name="allCells"></param>
+    /// <param name="groupsOfCells"></param>
+    /// <returns>Number of removed cells</returns>
+    private int SearchConnectedLines(ref List<Transform> allCells, List<List<Transform>> groupsOfCells)
     {
+        int nbRemoved = 0;
         foreach (var cellGroup in groupsOfCells)
         {
             if (cellGroup.Any(x => x.tag == TagNames.RightColumn) && cellGroup.Any(x => x.tag == TagNames.LeftColumn))
@@ -321,9 +369,11 @@ public class GameController : MonoBehaviour
                     cell.GetComponent<BlockController>().Kill();
                     allCells.Remove(cell);
                     MarkFlyingCell(allCells, cellPosition);
+                    nbRemoved++;
                 }
             }
         }
+        return nbRemoved;
     }
 
     private void MarkFlyingCell(List<Transform> allCells, Vector2 cellPosition)

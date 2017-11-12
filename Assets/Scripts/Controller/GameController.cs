@@ -23,6 +23,21 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System;
 
+/// <summary>
+/// Controls most of the game logic.
+/// 
+/// "Block" is a square of color.
+/// "Cell" is the same as a "block", but only in context of grid computations.
+/// "Arena" are all the blocks that are displayed except the floor and the player.
+/// "Player" is the two blocks the actual human player uses.
+/// "Floor" is the bottom blocks that cannot disappear.
+/// "Ceiling" is the small line of grey blocks at the top.
+/// "Columns" are the two columns of block at each size of the arena.
+/// "Next Player" is the block displaying the next colors the player will use.
+/// "Flying Cell" is a block that is in the air after blocks have disappeared below it.
+/// "Connecting Squares" is a chain of block from the left column to the right column.
+/// "Cycle". A cycle starts when the "player" is created and ends when it is at its final position, on top of another block.
+/// </summary>
 public class GameController : MonoBehaviour
 {
 
@@ -50,6 +65,8 @@ public class GameController : MonoBehaviour
     private string scoreFormat = "000000000000000";
     private float timeToNextSpeedUp;
     private const float timeBetweenEachSpeedUp = 45;
+
+
     void Start()
     {
         var menuGlobalController = GameObject.FindGameObjectWithTag(TagNames.GlobalController);
@@ -81,7 +98,7 @@ public class GameController : MonoBehaviour
             EndGame();
         }
         timeToNextSpeedUp -= Time.deltaTime;
-        if(timeToNextSpeedUp < 0)
+        if (timeToNextSpeedUp < 0)
         {
             timeToNextSpeedUp = Math.Min(globalController.GameSpeed * 6, timeBetweenEachSpeedUp);
             if (globalController.GameSpeed < 20)
@@ -91,6 +108,9 @@ public class GameController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Camera is setup depending on arena size.
+    /// </summary>
     private void SetupCamera()
     {
         mainCamera.transform.position = new Vector3((rightColumnIndex + leftColumnIndex) / 2, columnSize * 0.6f, -10);
@@ -98,6 +118,9 @@ public class GameController : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// Invoke coroutine to allow small animations of falling blocks during combos and columns creation.
+    /// </summary>
     public void DoNewCycle()
     {
         coroutine = StepByStepBlockMovement(blocksAutofallSpeed);
@@ -105,6 +128,11 @@ public class GameController : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Invoke at the end of the cycle to compute possible chains.
+    /// </summary>
+    /// <param name="waitTime"></param>
+    /// <returns></returns>
     private IEnumerator StepByStepBlockMovement(float waitTime)
     {
         List<Transform> flyingCell = new List<Transform>();
@@ -139,7 +167,10 @@ public class GameController : MonoBehaviour
     }
 
     #region Block color
-
+    /// <summary>
+    /// Retrieve the colors of the "Next Player" display.
+    /// </summary>
+    /// <returns></returns>
     public List<int> GetNextPlayerColors()
     {
         BlockColor[] blockColors = nextPlayer.GetComponentsInChildren<BlockColor>();
@@ -149,30 +180,45 @@ public class GameController : MonoBehaviour
     #endregion
 
     #region Create every objects
+    /// <summary>
+    /// Create columns of block at each size of the arena.
+    /// </summary>
     private void CreateColumns()
     {
-        bool leftColumnCreation = CreateColumn(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
-        bool rightColumnCreation = CreateColumn(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
-        while (leftColumnCreation || rightColumnCreation)
+        bool leftColumnCreation;
+        bool rightColumnCreation;
+        do
         {
-            leftColumnCreation = CreateColumn(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
-            rightColumnCreation = CreateColumn(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
-        }
+            leftColumnCreation = CreateColumnCell(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
+            rightColumnCreation = CreateColumnCell(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
+        } while (leftColumnCreation || rightColumnCreation);
     }
 
+    /// <summary>
+    /// Recreate the columns with a small delay (for animation).
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator RecreateColumns()
     {
-        bool leftColumnCreation = CreateColumn(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
-        bool rightColumnCreation = CreateColumn(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
-        while (leftColumnCreation || rightColumnCreation)
+        bool leftColumnCreation;
+        bool rightColumnCreation;
+        do
         {
-            leftColumnCreation = CreateColumn(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
-            rightColumnCreation = CreateColumn(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
+            leftColumnCreation = CreateColumnCell(leftColumn, leftColumnIndex, columnSize, TagNames.LeftColumn);
+            rightColumnCreation = CreateColumnCell(rightColumn, rightColumnIndex, columnSize, TagNames.RightColumn);
             yield return new WaitForSeconds(columnRecreationSpeed);
-        }
+        } while (leftColumnCreation || rightColumnCreation);
     }
 
-    private bool CreateColumn(GameObject column, int worldPosition, int nbCellsPerColumn, string tagName)
+    /// <summary>
+    /// Create one of the cell of a column.
+    /// </summary>
+    /// <param name="column">Parent column object</param>
+    /// <param name="worldPosition">Position in world space</param>
+    /// <param name="nbCellsPerColumn">Number of cells for the column</param>
+    /// <param name="tagName">Tag name</param>
+    /// <returns>If a cell has been created</returns>
+    private bool CreateColumnCell(GameObject column, int worldPosition, int nbCellsPerColumn, string tagName)
     {
         BlockColor[] cells = column.GetComponentsInChildren<BlockColor>();
         if (cells.Count() < nbCellsPerColumn)
@@ -186,6 +232,9 @@ public class GameController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Create the bottom line of blocks.
+    /// </summary>
     private void CreateFloor()
     {
         float padding = leftColumnIndex;
@@ -200,6 +249,9 @@ public class GameController : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Create the small grey lines of background blocks.
+    /// </summary>
     private void CreateCeiling()
     {
         float ceilingSize = 0.5f;
@@ -217,6 +269,10 @@ public class GameController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Compute if the "ceiling" has been reached.
+    /// </summary>
+    /// <returns>if the player has lost</returns>
     private bool IsEndGame()
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag(TagNames.Player);
@@ -227,6 +283,9 @@ public class GameController : MonoBehaviour
         return maxPlayerPositionInY >= columnSize;
     }
 
+    /// <summary>
+    /// Create new blocks for the player.
+    /// </summary>
     private void CreatePlayer()
     {
         Instantiate(
@@ -235,6 +294,9 @@ public class GameController : MonoBehaviour
                 playerTemplate.transform.rotation);
     }
 
+    /// <summary>
+    /// Create the small display of the next colors on the right of the screen.
+    /// </summary>
     private void CreateNextPlayer()
     {
         nextPlayer = Instantiate(
@@ -243,6 +305,9 @@ public class GameController : MonoBehaviour
             nextPlayerTemplate.transform.rotation);
     }
 
+    /// <summary>
+    /// Update the small display of the next colors.
+    /// </summary>
     public void ChangeNextPlayerColors()
     {
         BlockColor[] blockColors = nextPlayer.GetComponentsInChildren<BlockColor>();
@@ -254,6 +319,11 @@ public class GameController : MonoBehaviour
     #endregion
 
     #region Compute Connecting Squares
+    /// <summary>
+    /// Remove chained cells.
+    /// </summary>
+    /// <param name="allCells"></param>
+    /// <returns></returns>
     private List<int> ComputeConnectingSquares(ref List<Transform> allCells)
     {
         Dictionary<int, List<Transform>> sortedColors = allCells.GroupBy(c => c.GetComponent<BlockColor>().Color).ToDictionary(c => c.Key, c => c.ToList());
@@ -268,7 +338,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// Find all cells, including columns
+    /// Find all cells of the arena.
     /// </summary>
     /// <returns></returns>
     private List<Transform> FindAllCells()
@@ -284,7 +354,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// Group cells of same color that near each other
+    /// Group cells of same color that are near each other.
     /// </summary>
     /// <param name="sortedCells"></param>
     /// <returns></returns>
@@ -332,7 +402,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// Display group cell if DebugText is enabled on block controller (debug purpose)
+    /// Display cell's group if DebugText is enabled on block controller (debug purpose).
     /// </summary>
     /// <param name="groupsOfCells"></param>
     private void DisplayGroupNumber(List<List<Transform>> groupsOfCells)
@@ -347,7 +417,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// Remove connected lines and return the number of removed cells
+    /// Remove connected lines and return the number of removed cells.
     /// </summary>
     /// <param name="allCells"></param>
     /// <param name="groupsOfCells"></param>
@@ -376,6 +446,11 @@ public class GameController : MonoBehaviour
         return nbRemoved;
     }
 
+    /// <summary>
+    /// Mark cells on top of the cellPosition that are floating in the air.
+    /// </summary>
+    /// <param name="allCells"></param>
+    /// <param name="cellPosition">starting position where cells are searched for</param>
     private void MarkFlyingCell(List<Transform> allCells, Vector2 cellPosition)
     {
         List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && cellPosition.x == c.position.x).OrderBy(c => c.position.y).ToList();
@@ -387,7 +462,11 @@ public class GameController : MonoBehaviour
 
     #endregion
     #region Compute Flying cells
-
+    /// <summary>
+    /// Compute where the flying cell will fall.
+    /// </summary>
+    /// <param name="allCells"></param>
+    /// <returns></returns>
     private List<Transform> ComputeFlyingCellNewPosition(List<Transform> allCells)
     {
         List<Transform> flyingCells = allCells.Where(x => x.GetComponent<BlockAnnotation>().UpInTheAir).ToList();
@@ -411,6 +490,11 @@ public class GameController : MonoBehaviour
         return flyingCells;
     }
 
+    /// <summary>
+    /// Move the cells from their "flying cell" positions to their position on top of another block, one row at a time (for animation).
+    /// </summary>
+    /// <param name="cellsToLower">Cells that falls</param>
+    /// <returns>If the cells are not in their final position</returns>
     private bool MoveCellToLowerPosition(List<Transform> cellsToLower)
     {
         bool stillHasToMove = false;
@@ -429,7 +513,9 @@ public class GameController : MonoBehaviour
     }
     #endregion
 
-
+    /// <summary>
+    /// End the game and return to the menu.
+    /// </summary>
     private void EndGame()
     {
         int scene = SceneManager.GetActiveScene().buildIndex - 1;

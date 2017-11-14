@@ -371,10 +371,10 @@ public class GameController : MonoBehaviour
             {
                 foreach (var cell in cellGroup)
                 {
-                    if (cellToCompare.position.x - 1 == cell.position.x && cellToCompare.position.y == cell.position.y
-                        || cellToCompare.position.x + 1 == cell.position.x && cellToCompare.position.y == cell.position.y
-                        || cellToCompare.position.y - 1 == cell.position.y && cellToCompare.position.x == cell.position.x
-                        || cellToCompare.position.y + 1 == cell.position.y && cellToCompare.position.x == cell.position.x)
+                    if (Mathf.Approximately(cellToCompare.position.x - 1, cell.position.x) && Mathf.Approximately(cellToCompare.position.y, cell.position.y)
+                        || Mathf.Approximately(cellToCompare.position.x + 1, cell.position.x) && Mathf.Approximately(cellToCompare.position.y, cell.position.y)
+                        || Mathf.Approximately(cellToCompare.position.y - 1, cell.position.y) && Mathf.Approximately(cellToCompare.position.x, cell.position.x)
+                        || Mathf.Approximately(cellToCompare.position.y + 1, cell.position.y) && Mathf.Approximately(cellToCompare.position.x, cell.position.x))
                     {
                         if (currentGroup != null) // Merge Group
                         {
@@ -453,7 +453,7 @@ public class GameController : MonoBehaviour
     /// <param name="cellPosition">starting position where cells are searched for</param>
     private void MarkFlyingCell(List<Transform> allCells, Vector2 cellPosition)
     {
-        List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && cellPosition.x == c.position.x).OrderBy(c => c.position.y).ToList();
+        List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && Mathf.Approximately(cellPosition.x, c.position.x)).OrderBy(c => c.position.y).ToList();
         if (upperCell.Count > 0 && upperCell[0].position.y > 1)
         {
             upperCell.ForEach(c => { c.GetComponent<BlockAnnotation>().UpInTheAir = true; c.GetComponent<BlockController>().ChangeText("L"); });
@@ -477,8 +477,8 @@ public class GameController : MonoBehaviour
 
             foreach (var flyingCell in flyingCells)
             {
-                while (!allCells.Any(cell => flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1 == cell.GetComponent<BlockAnnotation>().NewPosition.y
-                                    && flyingCell.position.x == cell.position.x)
+                while (!allCells.Any(cell => Mathf.Approximately(flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1, cell.GetComponent<BlockAnnotation>().NewPosition.y)
+                                    && Mathf.Approximately(flyingCell.position.x, cell.position.x))
                          && flyingCell.GetComponent<BlockAnnotation>().NewPosition.y > 1)
                 {
                     flyingCell.GetComponent<BlockAnnotation>().NewPosition = new Vector2(flyingCell.position.x, flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1);

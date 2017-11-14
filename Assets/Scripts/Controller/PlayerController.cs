@@ -211,29 +211,45 @@ public class PlayerController : MonoBehaviour
 
     private void RotateSecondaryBlockLeft()
     {
-        RelativePosition nextPositionAvailable = secondaryBlockPosition;
-        nextPositionAvailable = (RelativePosition)((int)nextPositionAvailable - 1 < 0 ? 3 : (int)nextPositionAvailable - 1);
-        if (!IsPositionAvailable(nextPositionAvailable))
+        RelativePosition leftPositionAvailable = (RelativePosition)((int)secondaryBlockPosition - 1 < 0 ? 3 : (int)secondaryBlockPosition - 1);
+        bool isLeftPositionAvailable = IsPositionAvailable(leftPositionAvailable);
+        if (!isLeftPositionAvailable)
         {
-            ReverseColors();
+            if (secondaryBlockPosition == RelativePosition.TOP || secondaryBlockPosition == RelativePosition.BOTTOM)
+            {
+                RelativePosition rightPositionAvailable = (RelativePosition)((int)(secondaryBlockPosition + 1) % 4);
+                bool isRightPositionAvailable = IsPositionAvailable(rightPositionAvailable);
+                if (!isRightPositionAvailable)
+                {
+                    ReverseColors();
+                }
+            }
         }
         else
         {
-            secondaryBlockPosition = nextPositionAvailable;
+            secondaryBlockPosition = leftPositionAvailable;
             MoveSecondaryBlockPosition();
         }
     }
 
     private void RotateSecondaryBlockRight()
     {
-        RelativePosition nextPositionAvailable = secondaryBlockPosition;
-        nextPositionAvailable = (RelativePosition)((int)(nextPositionAvailable + 1) % 4);
-        if (!IsPositionAvailable(nextPositionAvailable)) { 
-            ReverseColors();
+        RelativePosition rightPositionAvailable = (RelativePosition)((int)(secondaryBlockPosition + 1) % 4);
+        bool isRightPositionAvailable = IsPositionAvailable(rightPositionAvailable);
+        if (!isRightPositionAvailable) {
+            if (secondaryBlockPosition == RelativePosition.TOP || secondaryBlockPosition == RelativePosition.BOTTOM)
+            {
+                RelativePosition leftPositionAvailable = (RelativePosition)((int)secondaryBlockPosition - 1 < 0 ? 3 : (int)secondaryBlockPosition - 1);
+                bool isLeftPositionAvailable = IsPositionAvailable(leftPositionAvailable);
+                if (!isLeftPositionAvailable)
+                {
+                    ReverseColors();
+                }
+            }
         }
         else
         {
-            secondaryBlockPosition = nextPositionAvailable;
+            secondaryBlockPosition = rightPositionAvailable;
             MoveSecondaryBlockPosition();
         }
     }

@@ -223,8 +223,7 @@ public class GameController : MonoBehaviour
         BlockColor[] cells = column.GetComponentsInChildren<BlockColor>();
         if (cells.Count() < nbCellsPerColumn)
         {
-            GameObject newCell = Instantiate(columnCellTemplate, new Vector2(worldPosition, cells.Count() + 1f), Quaternion.identity);
-            newCell.transform.parent = column.transform;
+            GameObject newCell = Instantiate(columnCellTemplate, new Vector2(worldPosition, cells.Count() + 1f), Quaternion.identity, column.transform);
             newCell.tag = tagName;
             newCell.GetComponent<BlockController>().ChangeNameForDebug();
             return true;
@@ -240,10 +239,9 @@ public class GameController : MonoBehaviour
         float padding = leftColumnIndex;
         while (padding <= rightColumnIndex)
         {
-            GameObject floor = Instantiate(floorTemplate, new Vector2(padding, 0), Quaternion.identity);
+            GameObject floor = Instantiate(floorTemplate, new Vector2(padding, 0), Quaternion.identity, arenaLines.transform);
             floor.GetComponent<BlockColor>().Color = 6;
             floor.name = "Floor";
-            floor.transform.parent = arenaLines.transform;
             padding++;
         }
 
@@ -258,13 +256,12 @@ public class GameController : MonoBehaviour
         float padding = leftColumnIndex - 0.5f * ceilingSize;
         while (padding <= rightColumnIndex + 0.5f * ceilingSize)
         {
-            GameObject ceiling = Instantiate(floorTemplate, new Vector2(padding, columnSize + ceilingSize * .5f), Quaternion.identity);
+            GameObject ceiling = Instantiate(floorTemplate, new Vector2(padding, columnSize + ceilingSize * .5f), Quaternion.identity, arenaLines.transform);
             ceiling.transform.localScale = new Vector2(ceilingSize, ceilingSize);
             ceiling.GetComponent<BlockColor>().Color = 7;
             ceiling.GetComponent<SpriteRenderer>().sortingLayerName = SortingLayerNames.Background;
             ceiling.GetComponent<BoxCollider2D>().enabled = false;
             ceiling.name = "Ceiling";
-            ceiling.transform.parent = arenaLines.transform;
             padding += ceilingSize;
         }
     }
@@ -371,10 +368,10 @@ public class GameController : MonoBehaviour
             {
                 foreach (var cell in cellGroup)
                 {
-                    if (Mathf.Approximately(cellToCompare.position.x - 1, cell.position.x) && Mathf.Approximately(cellToCompare.position.y, cell.position.y)
-                        || Mathf.Approximately(cellToCompare.position.x + 1, cell.position.x) && Mathf.Approximately(cellToCompare.position.y, cell.position.y)
-                        || Mathf.Approximately(cellToCompare.position.y - 1, cell.position.y) && Mathf.Approximately(cellToCompare.position.x, cell.position.x)
-                        || Mathf.Approximately(cellToCompare.position.y + 1, cell.position.y) && Mathf.Approximately(cellToCompare.position.x, cell.position.x))
+                    if (MathExtensions.SafeComparison(cellToCompare.position.x - 1, cell.position.x) && MathExtensions.SafeComparison(cellToCompare.position.y, cell.position.y)
+                        || MathExtensions.SafeComparison(cellToCompare.position.x + 1, cell.position.x) && MathExtensions.SafeComparison(cellToCompare.position.y, cell.position.y)
+                        || MathExtensions.SafeComparison(cellToCompare.position.y - 1, cell.position.y) && MathExtensions.SafeComparison(cellToCompare.position.x, cell.position.x)
+                        || MathExtensions.SafeComparison(cellToCompare.position.y + 1, cell.position.y) && MathExtensions.SafeComparison(cellToCompare.position.x, cell.position.x))
                     {
                         if (currentGroup != null) // Merge Group
                         {
@@ -453,7 +450,7 @@ public class GameController : MonoBehaviour
     /// <param name="cellPosition">starting position where cells are searched for</param>
     private void MarkFlyingCell(List<Transform> allCells, Vector2 cellPosition)
     {
-        List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && Mathf.Approximately(cellPosition.x, c.position.x)).OrderBy(c => c.position.y).ToList();
+        List<Transform> upperCell = allCells.Where(c => cellPosition.y < c.position.y && MathExtensions.SafeComparison(cellPosition.x, c.position.x)).OrderBy(c => c.position.y).ToList();
         if (upperCell.Count > 0 && upperCell[0].position.y > 1)
         {
             upperCell.ForEach(c => { c.GetComponent<BlockAnnotation>().UpInTheAir = true; c.GetComponent<BlockController>().ChangeText("L"); });
@@ -477,8 +474,8 @@ public class GameController : MonoBehaviour
 
             foreach (var flyingCell in flyingCells)
             {
-                while (!allCells.Any(cell => Mathf.Approximately(flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1, cell.GetComponent<BlockAnnotation>().NewPosition.y)
-                                    && Mathf.Approximately(flyingCell.position.x, cell.position.x))
+                while (!allCells.Any(cell => MathExtensions.SafeComparison(flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1, cell.GetComponent<BlockAnnotation>().NewPosition.y)
+                                    && MathExtensions.SafeComparison(flyingCell.position.x, cell.position.x))
                          && flyingCell.GetComponent<BlockAnnotation>().NewPosition.y > 1)
                 {
                     flyingCell.GetComponent<BlockAnnotation>().NewPosition = new Vector2(flyingCell.position.x, flyingCell.GetComponent<BlockAnnotation>().NewPosition.y - 1);
